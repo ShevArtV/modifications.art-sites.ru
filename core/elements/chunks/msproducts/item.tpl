@@ -54,7 +54,7 @@
                     <div class="form-group row align-items-center">
                         <label class="col-6 col-md-3 text-right text-md-left col-form-label" for="option_{$k}">ms2_product_{$k}:</label>
                         <div class="col-6 col-md-9">
-                            <select name="options[{$k}]" class="form-control col-md-6" data-modoptions="{$k === 'age' ? 'master':'slave'}" id="option_{$k}">
+                            <select name="options[{$k}]" class="form-control col-md-6" data-modoptions id="option_{$k}">
                                 {foreach $m as $v => $ids}
                                 <option value="{$v}" data-ids="{$ids | join: ','}">{$v}</option>
                                 {/foreach}

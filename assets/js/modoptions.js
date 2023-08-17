@@ -2,8 +2,7 @@ class Modoptions {
     constructor(root) {
         this.root = root;
         this.config = {
-            masterOption: root.querySelector('[data-modoptions="master"]'),
-            slavedOptions: root.querySelectorAll('[data-modoptions="slave"]'),
+            modOptions: root.querySelectorAll('[data-modoptions]'),
             actionUrl: 'assets/action.php',
             btns: root.querySelectorAll('[name="ms2_action"]'),
         };
@@ -28,17 +27,17 @@ class Modoptions {
     }
 
     initialize() {
-        if (!this.config.masterOption && !this.config.slavedOptions.length) return false;
+        if (!this.config.modOptions.length) return false;
         document.addEventListener('mo:toggle_complete', (e) => this.send(e));
 
         document.addEventListener('change', (e) => {
             const selectOption = e.target.closest('[data-modoptions]');
             if (selectOption) {
-                this.toggleDisabled();
+                this.setModId();
             }
         });
 
-        this.toggleDisabled();
+        this.setModId();
     }
 
     async send(e) {
@@ -87,46 +86,25 @@ class Modoptions {
     }
 
     toggleDisabled() {
-        if (this.config.masterOption) {
-            const ids = this.config.masterOption.options[this.config.masterOption.selectedIndex].dataset.ids.split(',');
-            this.config.slavedOptions.forEach(select => {
-                for (let option of select.options) {
-                    if (typeof option === 'number') continue;
-                    const slavedIds = option.dataset?.ids.split(',');
-                    const intersection = ids?.filter(x => slavedIds?.includes(x));
-                    if (intersection.length) {
-                        option.disabled = false;
-                    } else {
-                        option.disabled = true;
-                        option.selected = false;
-                    }
-                }
 
-
-                if (select.selectedIndex === -1) {
-                    select.querySelector('option:not(:disabled)').selected = true;
-                }
-            });
-        }
-
-        this.setModId();
-        document.dispatchEvent(this.toggleEvent);
     }
 
     setModId() {
         const modOptions = this.root.querySelectorAll('[data-modoptions] option:checked');
         let intersections = [];
         if (modOptions.length) {
-            modOptions.forEach(option => {
+            modOptions.forEach((option, i) => {
                 const ids = option.dataset.ids.split(',');
-                if (!intersections.length) {
+                if (!intersections.length && i === 0) {
                     intersections = ids;
                 } else {
-                    intersections = intersections.filter(x => ids?.includes(x));
+                    intersections = ids?.filter(x => intersections?.includes(x));
                 }
             });
-            intersections.length ? this.modId = intersections[0] : this.modId = 0;
+
+            intersections.length === 1 ? this.modId = intersections[0] : this.modId = 0;
         }
+        document.dispatchEvent(this.toggleEvent);
     }
 }
 

@@ -3,10 +3,11 @@
 switch($modx->event->name){
     case 'OnDocFormSave':
         if($resource->get('class_key') === 'msProduct'){
+            $linkId = 1;
             if($resource->get('template') === 2){
                 $master = $id;
             }else{
-                if(!$link = $modx->getObject('msProductLink', ['slave' => $id, 'link' => 1])){
+                if(!$link = $modx->getObject('msProductLink', ['slave' => $id, 'link' => $linkId])){
                     return true;
                 }
                 $master = $link->get('master');
@@ -16,7 +17,7 @@ switch($modx->event->name){
             $optionsKeys = "('colors', 'age', 'max-weight')";
             $q = $modx->newQuery('msProductLink');
             $q->select('slave');
-            $q->where(['master' => $master, 'link' => 1]);
+            $q->where(['master' => $master, 'link' => $linkId]);
             $q->groupby('slave');
             $q->prepare();
             $sql = $q->toSQL();
