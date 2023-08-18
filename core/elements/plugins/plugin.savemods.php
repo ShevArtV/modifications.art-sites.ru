@@ -38,4 +38,7 @@ switch($modx->event->name){
             }
         }
         break;
+    case 'OnHandleRequest':
+        setcookie('msmods', rand(100000, 999999));
+        break;
 }

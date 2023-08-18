@@ -3,6 +3,8 @@ class Modoptions {
         this.root = root;
         this.config = {
             modOptions: root.querySelectorAll('[data-modoptions]'),
+            masterOption: root.querySelector('[data-modoptions="master"]'),
+            slaveOptions: root.querySelectorAll('[data-modoptions="slave"]'),
             actionUrl: 'assets/action.php',
             btns: root.querySelectorAll('[name="ms2_action"]'),
         };
@@ -25,7 +27,12 @@ class Modoptions {
         });
         this.initialize();
     }
-
+    getCookie(name) {
+        let matches = document.cookie.match(new RegExp(
+            "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
+        ));
+        return matches ? decodeURIComponent(matches[1]) : undefined;
+    }
     initialize() {
         if (!this.config.modOptions.length) return false;
         document.addEventListener('mo:toggle_complete', (e) => this.send(e));
@@ -33,10 +40,12 @@ class Modoptions {
         document.addEventListener('change', (e) => {
             const selectOption = e.target.closest('[data-modoptions]');
             if (selectOption) {
+                this.toggleDisabled();
                 this.setModId();
             }
         });
 
+        this.toggleDisabled();
         this.setModId();
     }
 
@@ -44,6 +53,7 @@ class Modoptions {
         if (!this.modId) {
             this.config.btns?.forEach(btn => btn.disabled = true);
             document.dispatchEvent(this.modNotFoundEvent);
+            this.error({msg: 'Такой модификации не существует!'});
             return false;
         }
         this.config.btns?.forEach(btn => btn.disabled = false);
@@ -53,14 +63,16 @@ class Modoptions {
             method: 'POST',
             body: params,
             headers: {
-                'X-MSMODS': 'get/modification'
+                'X-MSMODS': 'get/modification',
+                'X-MSTOKEN': this.getCookie('msmods')
             }
         });
+
         const result = await response.json();
         if (result.id) {
             this.success(result)
         } else {
-            this.error()
+            this.error(result)
         }
     }
 
@@ -82,11 +94,37 @@ class Modoptions {
         }
     }
 
-    error() {
+    error(result) {
+        if(typeof miniShop2 !== 'undefined' && result.msg){
+            miniShop2.Message.error(result.msg);
+        }
     }
 
-    toggleDisabled() {
+    toggleDisabled(){
+        if(!this.config.masterOption || !this.config.slaveOptions.length) return;
+        const ids = this.config.masterOption.options[this.config.masterOption.selectedIndex].dataset.ids.split(',');
+        if(this.config.slaveOptions.length){
+            this.config.slaveOptions.forEach((select) => {
+                const options = select.options;
+                for (let k in options) {
+                    if (typeof options[k] !== 'object') continue;
+                    const currentIds = options[k].dataset.ids.split(',');
+                    const intersect = currentIds?.filter(x => ids?.includes(x));
+                    if(intersect.length){
+                        options[k].disabled = false;
+                    }else{
+                        options[k].disabled = true;
+                        options[k].selected = false;
+                    }
 
+                }
+
+                if(select.selectedIndex === -1){
+                    const option = select.querySelector('option:not(:disabled)');
+                    option.selected = true;
+                }
+            });
+        }
     }
 
     setModId() {
